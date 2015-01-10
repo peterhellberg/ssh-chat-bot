@@ -2,7 +2,7 @@ package robots
 
 import "strings"
 
-// EchoBot is a simple ping/pong bot
+// EchoBot is a simple echo bot
 type EchoBot struct{}
 
 func init() {
