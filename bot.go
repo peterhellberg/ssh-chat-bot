@@ -6,6 +6,7 @@ import (
 	"fmt"
 	"io"
 	"strings"
+	"time"
 
 	"github.com/peterhellberg/ssh-chat-bot/robots"
 
@@ -14,8 +15,15 @@ import (
 
 const controlCodeString = "\x1b[D\x1b[D\x1b[D\x1b[D\x1b[D\x1b[D\x1b[D\x1b[D\x1b[D\x1b[D\x1b[D\x1b[D\x1b[D\x1b[D\x1b[D\x1b[K"
 
+var active = false
+
 // Bot runs the bot
 func Bot(addr string) error {
+	go func() {
+		time.Sleep(5 * time.Second)
+		active = true
+	}()
+
 	conn, err := dial(addr, *user)
 	if err != nil {
 		return err
@@ -64,6 +72,10 @@ func Bot(addr string) error {
 					continue
 				}
 
+				if !active {
+					continue
+				}
+
 				if response := robot.Run(cmd); response != "" {
 					reply(in, fmt.Sprintf("%s %s", cmd.From, response))
 				}
@@ -93,7 +105,9 @@ func parseLine(line string) (*robots.Command, error) {
 		args = fields[4:]
 	}
 
-	fmt.Printf("%#v\n", args)
+	if active {
+		fmt.Printf("%#v\n", args)
+	}
 
 	cmd := robots.Command{
 		From:    from,
