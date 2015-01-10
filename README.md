@@ -8,7 +8,7 @@ server is up, and responding.
 
 ## Robots
 
-[![GoDoc](https://godoc.org/github.com/peterhellberg/ssh-chat-bot/robots?status.svg)](https://godoc.org/github.com/peterhellberg/ssh-chat-bot/robots)
+[![GoDoc](https://img.shields.io/badge/godoc-reference-blue.svg?style=flat)](https://godoc.org/github.com/peterhellberg/ssh-chat-bot/robots)
 
 ### Robot skeleton
 
@@ -46,7 +46,7 @@ Usage of ./ssh-chat-bot:
 
 ## MIT License
 
-*Copyright (C) 2015 Peter Hellberg*
+*Copyright (C) 2015 [Peter Hellberg](http://c7.se/)*
 
 > Permission is hereby granted, free of charge, to any person obtaining
 > a copy of this software and associated documentation files (the "Software"),
