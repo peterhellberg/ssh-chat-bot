@@ -29,5 +29,5 @@ func (b FlipBot) Run(c *Command) string {
 
 // Description describes what the robot does
 func (b FlipBot) Description() string {
-	return "the table"
+	return "<table,gopher>"
 }

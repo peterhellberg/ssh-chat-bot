@@ -16,5 +16,5 @@ func (b EchoBot) Run(c *Command) string {
 
 // Description describes what the robot does
 func (b EchoBot) Description() string {
-	return "what you said"
+	return "<something>"
 }

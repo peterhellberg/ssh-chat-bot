@@ -14,5 +14,5 @@ func (b PingBot) Run(c *Command) string {
 
 // Description describes what the robot does
 func (b PingBot) Description() string {
-	return "pong"
+	return ""
 }
