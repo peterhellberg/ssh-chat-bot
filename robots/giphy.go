@@ -46,7 +46,7 @@ func (b GiphyBot) Run(c *Command) string {
 
 // Description describes what the robot does
 func (b GiphyBot) Description() string {
-	return "<search,gif,random,translate,trending> [args]"
+	return "<search|gif|random|translate|trending> [args]"
 }
 
 func (b GiphyBot) search(c *Command, args []string) string {
