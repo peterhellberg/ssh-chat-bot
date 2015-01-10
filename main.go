@@ -1,3 +1,10 @@
+/*
+
+ssh-chat-bot
+
+A small chatbot for ssh-chat
+
+*/
 package main
 
 import (
