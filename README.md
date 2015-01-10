@@ -12,7 +12,7 @@ server is up, and responding.
 
 ### Robot skeleton
 
-```
+```go
 package robots
 
 // PingBot is a simple ping/pong bot
