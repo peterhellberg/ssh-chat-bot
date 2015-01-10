@@ -6,6 +6,16 @@ server is up, and responding.
 [![GoDoc](https://img.shields.io/badge/godoc-reference-blue.svg?style=flat)](https://godoc.org/github.com/peterhellberg/ssh-chat-bot)
 [![License MIT](https://img.shields.io/badge/license-MIT-lightgrey.svg?style=flat)](https://github.com/peterhellberg/ssh-chat-bot#mit-license)
 
+## Usage
+
+```bash
+Usage of ./ssh-chat-bot:
+  -n="ssh-chat-bot": Username
+  -h="localhost": Hostname
+  -p=2200: Port
+  -v=false: Verbose output
+```
+
 ## Robots
 
 [![GoDoc](https://img.shields.io/badge/godoc-reference-blue.svg?style=flat)](https://godoc.org/github.com/peterhellberg/ssh-chat-bot/robots)
@@ -32,16 +42,6 @@ func (b PingBot) Description() string {
 	return "pong"
 }
 
-```
-
-## Usage
-
-```bash
-Usage of ./ssh-chat-bot:
-  -n="ssh-chat-bot": Username
-  -h="localhost": Hostname
-  -p=2200: Port
-  -v=false: Verbose output
 ```
 
 ## MIT License
