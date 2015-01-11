@@ -40,6 +40,10 @@ func (b EvalBot) Run(c *Command) string {
 		return "Sorry, I won’t do that"
 	}
 
+	if len(out) > 128 {
+		return "Output too big!"
+	}
+
 	return out
 }
 
