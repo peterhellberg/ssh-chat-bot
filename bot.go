@@ -19,11 +19,6 @@ var active = false
 
 // Bot runs the bot
 func Bot(addr string) error {
-	go func() {
-		time.Sleep(2 * time.Second)
-		active = true
-	}()
-
 	conn, err := dial(addr, *user)
 	if err != nil {
 		return err
@@ -53,6 +48,12 @@ func Bot(addr string) error {
 	if err != nil {
 		return err
 	}
+
+	go func() {
+		time.Sleep(*delay)
+		in.Write([]byte("Now active\r\n"))
+		active = true
+	}()
 
 	in.Write([]byte("/theme mono\r\n"))
 
@@ -93,7 +94,11 @@ func parseLine(line string) (*robots.Command, error) {
 		return nil, errors.New("not enough fields in line")
 	}
 
-	from := strings.Split(fields[1], controlCodeString)[1]
+	fromFields := strings.Split(fields[1], controlCodeString)
+	if len(fromFields) < 2 {
+		return nil, errors.New("not enough fields in line")
+	}
+	from := fromFields[1]
 
 	if len(fields) < 4 {
 		return nil, errors.New("not enough fields in line")
