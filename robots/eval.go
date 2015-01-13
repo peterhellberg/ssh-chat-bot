@@ -10,7 +10,7 @@ import (
 	"github.com/robertkrimen/otto"
 )
 
-var halt = errors.New("Halt!")
+var errHalt = errors.New("Halt!")
 
 // EvalBot is a bot that evaluates JavaScript
 type EvalBot struct{}
@@ -57,7 +57,7 @@ func (b EvalBot) runUnsafe(unsafe string) (otto.Value, error) {
 	defer func() {
 		duration := time.Since(start)
 		if caught := recover(); caught != nil {
-			if caught == halt {
+			if caught == errHalt {
 				fmt.Fprintf(os.Stderr, "Some code took to long! Stopping after: %v\n", duration)
 				return
 			}
@@ -73,7 +73,7 @@ func (b EvalBot) runUnsafe(unsafe string) (otto.Value, error) {
 	go func() {
 		time.Sleep(2 * time.Second) // Stop after two seconds
 		vm.Interrupt <- func() {
-			panic(halt)
+			panic(errHalt)
 		}
 	}()
 
