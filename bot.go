@@ -51,7 +51,7 @@ func Bot(addr string) error {
 
 	go func() {
 		time.Sleep(*delay)
-		in.Write([]byte("Now active\r\n"))
+		in.Write([]byte("/msg " + *owner + " Now active\r\n"))
 		active = true
 	}()
 
