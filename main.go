@@ -21,6 +21,7 @@ var (
 	port    = flag.Int("p", 2200, "Port")
 	verbose = flag.Bool("v", false, "Verbose output")
 	delay   = flag.Duration("d", 5*time.Second, "Delay")
+	check   = flag.Duration("c", 30*time.Second, "Duration between alive checks")
 )
 
 const repoURL = "https://github.com/peterhellberg/ssh-chat-bot"

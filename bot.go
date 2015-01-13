@@ -60,7 +60,7 @@ func Bot(addr string) error {
 	go func() {
 		for {
 			in.Write([]byte("/motd\r\n"))
-			time.Sleep(30 * time.Second)
+			time.Sleep(*check)
 		}
 	}()
 
