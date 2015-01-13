@@ -57,6 +57,13 @@ func Bot(addr string) error {
 
 	in.Write([]byte("/theme mono\r\n"))
 
+	go func() {
+		for {
+			in.Write([]byte("/motd\r\n"))
+			time.Sleep(30 * time.Second)
+		}
+	}()
+
 	scanner := bufio.NewScanner(out)
 
 	for scanner.Scan() {
