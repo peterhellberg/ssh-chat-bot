@@ -5,12 +5,26 @@ A small chatbot for [ssh-chat](https://github.com/shazow/ssh-chat).
 [![GoDoc](https://img.shields.io/badge/godoc-reference-blue.svg?style=flat)](https://godoc.org/github.com/peterhellberg/ssh-chat-bot)
 [![License MIT](https://img.shields.io/badge/license-MIT-lightgrey.svg?style=flat)](https://github.com/peterhellberg/ssh-chat-bot#mit-license)
 
+## Installation
+
+```bash
+go get -u github.com/peterhellberg/ssh-chat-bot
+```
+
+You can also clone the repo and then run `make` in
+order to populate the `main.buildCommit` variable.
+
 ## Usage
 
 ```bash
-Usage of ./ssh-chat-bot:
-  -n="ssh-chat-bot": Username
+usage: ./ssh-chat-bot [-h hostname] [-v]
+
+flags:
+  -c=30s: Duration between alive checks
+  -d=5s: Delay
   -h="localhost": Hostname
+  -n="ssh-chat-bot": Username
+  -o="peterhellberg": Bot owner username
   -p=2200: Port
   -v=false: Verbose output
 ```
