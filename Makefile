@@ -6,10 +6,7 @@ all: $(BINARY)
 	go build ./...
 
 $(BINARY): **/*.go *.go
-	go build -ldflags "-X main.buildCommit `git rev-parse --short HEAD`" .
-
-deps:
-	go get .
+	go build -ldflags "-X main.buildCommit=`git rev-parse --short HEAD`" .
 
 build: $(BINARY)
 
