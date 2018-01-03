@@ -112,10 +112,14 @@ func parseLine(line string) (*robots.Command, error) {
 		return nil, errors.New("not enough fields in line")
 	}
 
-	command := fields[3]
+	command := strings.TrimRight(fields[3], "\a")
+
 	args := []string{}
+
 	if len(fields) > 4 {
-		args = fields[4:]
+		for _, f := range fields[4:] {
+			args = append(args, strings.TrimRight(f, "\a"))
+		}
 	}
 
 	if active {
