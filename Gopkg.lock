@@ -14,6 +14,18 @@
   revision = "349dd0209470eabd9514242c688c403c0926d266"
 
 [[projects]]
+  name = "github.com/dlclark/regexp2"
+  packages = [".","syntax"]
+  revision = "487489b64fb796de2e55f4e8a4ad1e145f80e957"
+  version = "v1.1.6"
+
+[[projects]]
+  branch = "master"
+  name = "github.com/dop251/goja"
+  packages = [".","ast","file","parser","token"]
+  revision = "86862cf74a095d3fc57ad938304d5026bf2a4779"
+
+[[projects]]
   branch = "master"
   name = "github.com/peterhellberg/flip"
   packages = ["."]
@@ -33,12 +45,6 @@
 
 [[projects]]
   branch = "master"
-  name = "github.com/robertkrimen/otto"
-  packages = [".","ast","dbg","file","parser","registry","token"]
-  revision = "3b44b4dcb6c00477273595c312908e2412d07da6"
-
-[[projects]]
-  branch = "master"
   name = "golang.org/x/crypto"
   packages = ["curve25519","ed25519","ed25519/internal/edwards25519","ssh"]
   revision = "0fcca4842a8d74bfddc2c96a073bd2a4d2a7a2e8"
@@ -50,14 +56,14 @@
   revision = "d866cfc389cec985d6fda2859936a575a55a3ab6"
 
 [[projects]]
-  name = "gopkg.in/sourcemap.v1"
-  packages = [".","base64vlq"]
-  revision = "6e83acea0053641eff084973fee085f0c193c61a"
-  version = "v1.0.5"
+  branch = "master"
+  name = "golang.org/x/text"
+  packages = ["cases","collate","collate/build","internal","internal/colltab","internal/gen","internal/tag","internal/triegen","internal/ucd","language","transform","unicode/cldr","unicode/norm"]
+  revision = "e19ae1496984b1c655b8044a65c0300a3c878dd3"
 
 [solve-meta]
   analyzer-name = "dep"
   analyzer-version = 1
-  inputs-digest = "cf37abb2e684fe3c2e5dc6301d8b135b4bdbee13326ae2eb1116e7dc6eee730e"
+  inputs-digest = "92f8da043f6e83bd56aba483fff7f70ebc73292130fc9e6eaeac1af4a9b61731"
   solver-name = "gps-cdcl"
   solver-version = 1
