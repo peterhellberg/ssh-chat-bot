@@ -5,6 +5,7 @@ import (
 	"errors"
 	"fmt"
 	"io"
+	"net"
 	"strings"
 	"time"
 
@@ -144,6 +145,9 @@ func dial(addr, user string) (*ssh.Client, error) {
 		User: user,
 		Auth: []ssh.AuthMethod{
 			ssh.PublicKeys(key),
+		},
+		HostKeyCallback: func(hostname string, remote net.Addr, key ssh.PublicKey) error {
+			return nil
 		},
 	})
 }
