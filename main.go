@@ -12,16 +12,8 @@ import (
 	"fmt"
 	"os"
 	"time"
-)
 
-var (
-	user    = flag.String("n", "ssh-chat-bot", "Username")
-	owner   = flag.String("o", "peterhellberg", "Bot owner username")
-	host    = flag.String("h", "localhost", "Hostname")
-	port    = flag.Int("p", 2200, "Port")
-	verbose = flag.Bool("v", false, "Verbose output")
-	delay   = flag.Duration("d", 5*time.Second, "Delay")
-	check   = flag.Duration("c", 30*time.Second, "Duration between alive checks")
+	"github.com/peterhellberg/ssh-chat-bot/herder"
 )
 
 const repoURL = "https://github.com/peterhellberg/ssh-chat-bot"
@@ -29,13 +21,33 @@ const repoURL = "https://github.com/peterhellberg/ssh-chat-bot"
 var buildCommit string
 
 func main() {
+	var (
+		user    = flag.String("n", "ssh-chat-bot", "Username")
+		owner   = flag.String("o", "peter", "Bot owner username")
+		host    = flag.String("h", "localhost", "Hostname")
+		port    = flag.Int("p", 2022, "Port")
+		delay   = flag.Duration("d", 2*time.Second, "Delay")
+		check   = flag.Duration("c", 30*time.Second, "Duration between alive checks")
+		verbose = flag.Bool("v", false, "Verbose output")
+	)
+
 	flag.Usage = usage
+
 	flag.Parse()
 
-	addr := fmt.Sprintf("%s:%d", *host, *port)
+	h := herder.New(
+		herder.User(*user),
+		herder.Owner(*owner),
+		herder.Addr(fmt.Sprintf("%s:%d", *host, *port)),
+		herder.Delay(*delay),
+		herder.Check(*check),
+		herder.Verbose(*verbose),
+	)
 
-	if err := Bot(addr); err != nil {
-		l("Error: %v", err)
+	if err := h.Run(); err != nil {
+		if *verbose {
+			fmt.Printf("Error: %v\n", err)
+		}
 		os.Exit(1)
 	}
 }
@@ -51,10 +63,4 @@ func usage() {
 	flag.PrintDefaults()
 	fmt.Fprintf(os.Stderr, "\n")
 	os.Exit(2)
-}
-
-func l(format string, args ...interface{}) {
-	if *verbose {
-		fmt.Printf(format+"\n", args...)
-	}
 }

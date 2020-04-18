@@ -1,6 +1,9 @@
 package robots
 
-import "log"
+import (
+	"fmt"
+	"log"
+)
 
 // Robots contains a map of robots
 var Robots = make(map[string]func() Robot)
@@ -12,4 +15,13 @@ func RegisterRobot(command string, robotInitFunction func() Robot) {
 	} else {
 		Robots[command] = robotInitFunction
 	}
+}
+
+func GetRobot(command string) (Robot, error) {
+	if fn, ok := Robots[command]; ok {
+		return fn(), nil
+	}
+
+	return nil, fmt.Errorf("unknown robot: %s", command)
+
 }
