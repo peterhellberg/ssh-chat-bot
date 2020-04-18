@@ -10,8 +10,9 @@ import (
 	"strings"
 	"time"
 
-	"github.com/peterhellberg/ssh-chat-bot/robots"
 	"golang.org/x/crypto/ssh"
+
+	"github.com/peterhellberg/ssh-chat-bot/robots"
 )
 
 type Herder struct {
@@ -104,27 +105,44 @@ func (h *Herder) Run() error {
 			return err
 		}
 
-		if !strings.Contains(line, ": "+h.user+": ") {
-			continue
-		}
+		switch {
+		case strings.HasPrefix(line, "[PM from"):
+			if cmd, err := parsePrivateCommand(line); err == nil {
+				if h.active {
+					fmt.Printf("Private %#v\n", cmd)
+				}
 
-		cmd, err := parseCommand(line, h.user)
-		if err == nil {
-			if h.active {
-				fmt.Printf("%#v\n", cmd)
+				robot, err := robots.GetRobot(cmd.Command)
+				if err != nil {
+					continue
+				}
+
+				if !h.active {
+					continue
+				}
+
+				if response := robot.Run(cmd); response != "" {
+					reply(in, response)
+				}
 			}
+		case strings.Contains(line, ": "+h.user+": "):
+			if cmd, err := parsePublicCommand(line, h.user); err == nil {
+				if h.active {
+					fmt.Printf("Public %#v\n", cmd)
+				}
 
-			robot, err := robots.GetRobot(cmd.Command)
-			if err != nil {
-				continue
-			}
+				robot, err := robots.GetRobot(cmd.Command)
+				if err != nil {
+					continue
+				}
 
-			if !h.active {
-				continue
-			}
+				if !h.active {
+					continue
+				}
 
-			if response := robot.Run(cmd); response != "" {
-				reply(in, fmt.Sprintf("%s %s", cmd.From, response))
+				if response := robot.Run(cmd); response != "" {
+					say(in, fmt.Sprintf("%s %s", cmd.From, response))
+				}
 			}
 		}
 	}
@@ -133,6 +151,10 @@ func (h *Herder) Run() error {
 }
 
 func reply(in io.WriteCloser, s string) {
+	in.Write([]byte("/reply " + s + "\r\n"))
+}
+
+func say(in io.WriteCloser, s string) {
 	in.Write([]byte(s + "\r\n"))
 }
 
