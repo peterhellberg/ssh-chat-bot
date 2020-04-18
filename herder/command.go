@@ -55,7 +55,7 @@ func parsePrivateCommand(line string) (*robots.Command, error) {
 
 	return &robots.Command{
 		From:    strings.TrimRight(fields[0], "]"),
-		Command: fields[1],
+		Command: strings.TrimRight(fields[1], "\a"),
 		Args:    args,
 	}, nil
 }
