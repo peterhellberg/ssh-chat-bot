@@ -45,9 +45,7 @@ func main() {
 	)
 
 	if err := h.Run(); err != nil {
-		if *verbose {
-			fmt.Printf("Error: %v\n", err)
-		}
+		fmt.Printf("Error: %v\n", err)
 		os.Exit(1)
 	}
 }

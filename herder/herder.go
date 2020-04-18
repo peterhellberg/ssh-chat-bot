@@ -113,6 +113,7 @@ func (h *Herder) Run() error {
 			if h.active {
 				fmt.Printf("%#v\n", cmd)
 			}
+
 			robot, err := robots.GetRobot(cmd.Command)
 			if err != nil {
 				continue
