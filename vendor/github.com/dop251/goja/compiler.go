@@ -10,6 +10,7 @@ import (
 
 const (
 	blockLoop = iota
+	blockLoopEnum
 	blockTry
 	blockBranch
 	blockSwitch
@@ -85,7 +86,7 @@ func (c *compiler) leaveBlock() {
 	for _, item := range c.block.breaks {
 		c.p.code[item] = jump(lbl - item)
 	}
-	if c.block.typ == blockLoop {
+	if t := c.block.typ; t == blockLoop || t == blockLoopEnum {
 		for _, item := range c.block.conts {
 			c.p.code[item] = jump(c.block.cont - item)
 		}
@@ -247,7 +248,7 @@ func (c *compiler) markBlockStart() {
 }
 
 func (c *compiler) compile(in *ast.Program) {
-	c.p.src = NewSrcFile(in.File.Name(), in.File.Source())
+	c.p.src = NewSrcFile(in.File.Name(), in.File.Source(), in.SourceMap)
 
 	if len(in.Body) > 0 {
 		if !c.scope.strict {
@@ -258,15 +259,8 @@ func (c *compiler) compile(in *ast.Program) {
 	c.compileDeclList(in.DeclarationList, false)
 	c.compileFunctions(in.DeclarationList)
 
-	if len(in.Body) > 0 {
-		for _, st := range in.Body[:len(in.Body)-1] {
-			c.compileStatement(st, false)
-		}
-
-		c.compileStatement(in.Body[len(in.Body)-1], true)
-	} else {
-		c.compileStatement(&ast.EmptyStatement{}, true)
-	}
+	c.markBlockStart()
+	c.compileStatements(in.Body, true)
 
 	c.p.code = append(c.p.code, halt)
 	code := c.p.code
@@ -285,7 +279,7 @@ func (c *compiler) compile(in *ast.Program) {
 	}
 
 	c.p.code = append(c.p.code, code...)
-	for i, _ := range c.p.srcMap {
+	for i := range c.p.srcMap {
 		c.p.srcMap[i].pc += len(c.scope.names)
 	}
 

@@ -1,10 +1,7 @@
 language: go
 
+dist: xenial
+
 go:
-  - 1.9.1
-  - 1.8.4
-
-sudo: false
-
-before_script:
-  - go vet ./...
+  - "1.11.5"
+  - "1.10.8"

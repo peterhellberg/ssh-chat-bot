@@ -2,6 +2,7 @@ package goja
 
 import (
 	"bytes"
+	"math"
 	"sort"
 	"strings"
 )
@@ -48,12 +49,12 @@ func (r *Runtime) arrayproto_push(call FunctionCall) Value {
 }
 
 func (r *Runtime) arrayproto_pop_generic(obj *Object, call FunctionCall) Value {
-	l := int(toLength(obj.self.getStr("length")))
+	l := toLength(obj.self.getStr("length"))
 	if l == 0 {
 		obj.self.putStr("length", intToValue(0), true)
 		return _undefined
 	}
-	idx := intToValue(int64(l - 1))
+	idx := intToValue(l - 1)
 	val := obj.self.get(idx)
 	obj.self.delete(idx, true)
 	obj.self.putStr("length", idx, true)
@@ -860,10 +861,20 @@ func (ctx *arraySortCtx) sortCompare(x, y Value) int {
 	}
 
 	if ctx.compare != nil {
-		return int(ctx.compare(FunctionCall{
+		f := ctx.compare(FunctionCall{
 			This:      _undefined,
 			Arguments: []Value{x, y},
-		}).ToInteger())
+		}).ToFloat()
+		if f > 0 {
+			return 1
+		}
+		if f < 0 {
+			return -1
+		}
+		if math.Signbit(f) {
+			return -1
+		}
+		return 0
 	}
 	return strings.Compare(x.String(), y.String())
 }

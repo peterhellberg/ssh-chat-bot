@@ -9,6 +9,9 @@ import (
 	"math/rand"
 	"reflect"
 	"strconv"
+	"time"
+
+	"golang.org/x/text/collate"
 
 	js_ast "github.com/dop251/goja/ast"
 	"github.com/dop251/goja/parser"
@@ -21,6 +24,7 @@ const (
 var (
 	typeCallable = reflect.TypeOf(Callable(nil))
 	typeValue    = reflect.TypeOf((*Value)(nil)).Elem()
+	typeTime     = reflect.TypeOf(time.Time{})
 )
 
 type global struct {
@@ -93,11 +97,15 @@ func ToFlag(b bool) Flag {
 
 type RandSource func() float64
 
+type Now func() time.Time
+
 type Runtime struct {
 	global          global
 	globalObject    *Object
 	stringSingleton *stringObject
 	rand            RandSource
+	now             Now
+	_collator       *collate.Collator
 
 	typeInfoCache   map[reflect.Type]*reflectTypeInfo
 	fieldNameMapper FieldNameMapper
@@ -231,6 +239,7 @@ func (r *Runtime) addToGlobal(name string, value Value) {
 
 func (r *Runtime) init() {
 	r.rand = rand.Float64
+	r.now = time.Now
 	r.global.ObjectPrototype = r.newBaseObject(nil, classObject).val
 	r.globalObject = r.NewObject()
 
@@ -906,8 +915,20 @@ func (r *Runtime) RunProgram(p *Program) (result Value, err error) {
 
 // Interrupt a running JavaScript. The corresponding Go call will return an *InterruptedError containing v.
 // Note, it only works while in JavaScript code, it does not interrupt native Go functions (which includes all built-ins).
+// If the runtime is currently not running, it will be immediately interrupted on the next Run*() call.
+// To avoid that use ClearInterrupt()
 func (r *Runtime) Interrupt(v interface{}) {
 	r.vm.Interrupt(v)
+}
+
+// ClearInterrupt resets the interrupt flag. Typically this needs to be called before the runtime
+// is made available for re-use if there is a chance it could have been interrupted with Interrupt().
+// Otherwise if Interrupt() was called when runtime was not running (e.g. if it had already finished)
+// so that Interrupt() didn't actually trigger, an attempt to use the runtime will immediately cause
+// an interruption. It is up to the user to ensure proper synchronisation so that ClearInterrupt() is
+// only called when the runtime has finished and there is no chance of a concurrent Interrupt() call.
+func (r *Runtime) ClearInterrupt() {
+	r.vm.ClearInterrupt()
 }
 
 /*
@@ -965,7 +986,7 @@ func (r *Runtime) ToValue(i interface{}) Value {
 	case int64:
 		return intToValue(i)
 	case uint:
-		if int64(i) <= math.MaxInt64 {
+		if uint64(i) <= math.MaxInt64 {
 			return intToValue(int64(i))
 		} else {
 			return floatToValue(float64(i))
@@ -986,6 +1007,9 @@ func (r *Runtime) ToValue(i interface{}) Value {
 	case float64:
 		return floatToValue(i)
 	case map[string]interface{}:
+		if i == nil {
+			return _null
+		}
 		obj := &Object{runtime: r}
 		m := &objectGoMapSimple{
 			baseObject: baseObject{
@@ -998,6 +1022,9 @@ func (r *Runtime) ToValue(i interface{}) Value {
 		m.init()
 		return obj
 	case []interface{}:
+		if i == nil {
+			return _null
+		}
 		obj := &Object{runtime: r}
 		a := &objectGoSlice{
 			baseObject: baseObject{
@@ -1009,6 +1036,9 @@ func (r *Runtime) ToValue(i interface{}) Value {
 		a.init()
 		return obj
 	case *[]interface{}:
+		if i == nil {
+			return _null
+		}
 		obj := &Object{runtime: r}
 		a := &objectGoSlice{
 			baseObject: baseObject{
@@ -1242,6 +1272,14 @@ func (r *Runtime) toReflectValue(v Value, typ reflect.Type) (reflect.Value, erro
 		return reflect.ValueOf(v.Export()).Convert(typ), nil
 	}
 
+	if typ == typeTime && et.Kind() == reflect.String {
+		time, ok := dateParse(v.String())
+		if !ok {
+			return reflect.Value{}, fmt.Errorf("Could not convert string %v to %v", v, typ)
+		}
+		return reflect.ValueOf(time), nil
+	}
+
 	switch typ.Kind() {
 	case reflect.Slice:
 		if o, ok := v.(*Object); ok {
@@ -1253,7 +1291,7 @@ func (r *Runtime) toReflectValue(v Value, typ reflect.Type) (reflect.Value, erro
 					item := o.self.get(intToValue(int64(i)))
 					itemval, err := r.toReflectValue(item, elemTyp)
 					if err != nil {
-						return reflect.Value{}, fmt.Errorf("Could not convert array element %v to %v at %d", v, typ, i)
+						return reflect.Value{}, fmt.Errorf("Could not convert array element %v to %v at %d: %s", v, typ, i, err)
 					}
 					s.Index(i).Set(itemval)
 				}
@@ -1300,11 +1338,21 @@ func (r *Runtime) toReflectValue(v Value, typ reflect.Type) (reflect.Value, erro
 			for i := 0; i < typ.NumField(); i++ {
 				field := typ.Field(i)
 				if ast.IsExported(field.Name) {
-					v := o.self.getStr(field.Name)
+					name := field.Name
+					if r.fieldNameMapper != nil {
+						name = r.fieldNameMapper.FieldName(typ, field)
+					}
+					var v Value
+					if field.Anonymous {
+						v = o
+					} else {
+						v = o.self.getStr(name)
+					}
+
 					if v != nil {
 						vv, err := r.toReflectValue(v, field.Type)
 						if err != nil {
-							return reflect.Value{}, fmt.Errorf("Could not convert struct value %v to %v for field %s", v, field.Type, field.Name)
+							return reflect.Value{}, fmt.Errorf("Could not convert struct value %v to %v for field %s: %s", v, field.Type, field.Name, err)
 
 						}
 						s.Field(i).Set(vv)
@@ -1317,6 +1365,17 @@ func (r *Runtime) toReflectValue(v Value, typ reflect.Type) (reflect.Value, erro
 		if fn, ok := AssertFunction(v); ok {
 			return reflect.MakeFunc(typ, r.wrapJSFunc(fn, typ)), nil
 		}
+	case reflect.Ptr:
+		elemTyp := typ.Elem()
+		v, err := r.toReflectValue(v, elemTyp)
+		if err != nil {
+			return reflect.Value{}, err
+		}
+
+		ptrVal := reflect.New(v.Type())
+		ptrVal.Elem().Set(v)
+
+		return ptrVal, nil
 	}
 
 	return reflect.Value{}, fmt.Errorf("Could not convert %v to %v", v, typ)
@@ -1391,6 +1450,29 @@ func (r *Runtime) SetRandSource(source RandSource) {
 	r.rand = source
 }
 
+// SetTimeSource sets the current time source for this Runtime.
+// If not called, the default time.Now() is used.
+func (r *Runtime) SetTimeSource(now Now) {
+	r.now = now
+}
+
+// New is an equivalent of the 'new' operator allowing to call it directly from Go.
+func (r *Runtime) New(construct Value, args ...Value) (o *Object, err error) {
+	defer func() {
+		if x := recover(); x != nil {
+			switch x := x.(type) {
+			case *Exception:
+				err = x
+			case *InterruptedError:
+				err = x
+			default:
+				panic(x)
+			}
+		}
+	}()
+	return r.builtin_new(r.toObject(construct), args), nil
+}
+
 // Callable represents a JavaScript function that can be called from Go.
 type Callable func(this Value, args ...Value) (Value, error)
 
@@ -1436,6 +1518,17 @@ func IsNull(v Value) bool {
 	return v == _null
 }
 
+// IsNaN returns true if the supplied value is NaN.
+func IsNaN(v Value) bool {
+	f, ok := v.assertFloat()
+	return ok && math.IsNaN(f)
+}
+
+// IsInfinity returns true if the supplied is (+/-)Infinity
+func IsInfinity(v Value) bool {
+	return v == _positiveInf || v == _negativeInf
+}
+
 // Undefined returns JS undefined value. Note if global 'undefined' property is changed this still returns the original value.
 func Undefined() Value {
 	return _undefined
@@ -1444,6 +1537,21 @@ func Undefined() Value {
 // Null returns JS null value.
 func Null() Value {
 	return _null
+}
+
+// NaN returns a JS NaN value.
+func NaN() Value {
+	return _NaN
+}
+
+// PositiveInf returns a JS +Inf value.
+func PositiveInf() Value {
+	return _positiveInf
+}
+
+// NegativeInf returns a JS -Inf value.
+func NegativeInf() Value {
+	return _negativeInf
 }
 
 func tryFunc(f func()) (err error) {
