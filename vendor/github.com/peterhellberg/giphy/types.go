@@ -39,20 +39,21 @@ type Trending struct {
 
 // Data contains all the fields in a data response from the Giphy API
 type Data struct {
-	Type             string `json:"type"`
-	ID               string `json:"id"`
-	URL              string `json:"url"`
-	BitlyGifURL      string `json:"bitly_gif_url"`
-	BitlyURL         string `json:"bitly_url"`
-	EmbedURL         string `json:"embed_url"`
-	Username         string `json:"username"`
-	Source           string `json:"source"`
-	Rating           string `json:"rating"`
-	Caption          string `json:"caption"`
-	ContentURL       string `json:"content_url"`
-	ImportDatetime   string `json:"import_datetime"`
-	TrendingDatetime string `json:"trending_datetime"`
-	Images           Images `json:"images"`
+	Type             string    `json:"type"`
+	ID               string    `json:"id"`
+	URL              string    `json:"url"`
+	BitlyGifURL      string    `json:"bitly_gif_url"`
+	BitlyURL         string    `json:"bitly_url"`
+	EmbedURL         string    `json:"embed_url"`
+	Username         string    `json:"username"`
+	Source           string    `json:"source"`
+	Rating           string    `json:"rating"`
+	Caption          string    `json:"caption"`
+	ContentURL       string    `json:"content_url"`
+	ImportDatetime   string    `json:"import_datetime"`
+	TrendingDatetime string    `json:"trending_datetime"`
+	Images           Images    `json:"images"`
+	Analytics        Analytics `json:"analytics"`
 }
 
 // MediaURL points directly to GIF image on media.giphy.com
@@ -104,12 +105,14 @@ type Images struct {
 
 // Image represents an image
 type Image struct {
-	URL    string `json:"url"`
-	Width  string `json:"width"`
-	Height string `json:"height"`
-	Size   string `json:"size,omitempty"`
-	Frames string `json:"frames,omitempty"`
-	Mp4    string `json:"mp4,omitempty"`
+	Height   string `json:"height"`
+	Width    string `json:"width"`
+	Size     string `json:"size"`
+	URL      string `json:"url"`
+	Mp4Size  string `json:"mp4_size"`
+	Mp4      string `json:"mp4"`
+	WebpSize string `json:"webp_size"`
+	Webp     string `json:"webp"`
 }
 
 // Pagination represents the pagination section in a Giphy API response
@@ -123,4 +126,16 @@ type Pagination struct {
 type Meta struct {
 	Status int    `json:"status"`
 	Msg    string `json:"msg"`
+}
+
+// ActionURL contains a pingback URL for an action such as SEEN, CLICK or SENT
+type ActionURL struct {
+	URL string `json:"url"`
+}
+
+// Analytics represents the analytics section in a Giphy API response
+type Analytics struct {
+	Onload  ActionURL `json:"onload"`
+	Onclick ActionURL `json:"onclick"`
+	Onsent  ActionURL `json:"onsent"`
 }

@@ -6,17 +6,14 @@ const (
 	ILLEGAL
 	EOF
 	COMMENT
-	KEYWORD
 
 	STRING
-	BOOLEAN
-	NULL
 	NUMBER
-	IDENTIFIER
 
 	PLUS      // +
 	MINUS     // -
 	MULTIPLY  // *
+	EXPONENT  // **
 	SLASH     // /
 	REMAINDER // %
 
@@ -26,11 +23,11 @@ const (
 	SHIFT_LEFT           // <<
 	SHIFT_RIGHT          // >>
 	UNSIGNED_SHIFT_RIGHT // >>>
-	AND_NOT              // &^
 
 	ADD_ASSIGN       // +=
 	SUBTRACT_ASSIGN  // -=
 	MULTIPLY_ASSIGN  // *=
+	EXPONENT_ASSIGN  // **=
 	QUOTIENT_ASSIGN  // /=
 	REMAINDER_ASSIGN // %=
 
@@ -40,10 +37,10 @@ const (
 	SHIFT_LEFT_ASSIGN           // <<=
 	SHIFT_RIGHT_ASSIGN          // >>=
 	UNSIGNED_SHIFT_RIGHT_ASSIGN // >>>=
-	AND_NOT_ASSIGN              // &^=
 
 	LOGICAL_AND // &&
 	LOGICAL_OR  // ||
+	COALESCE    // ??
 	INCREMENT   // ++
 	DECREMENT   // --
 
@@ -73,10 +70,23 @@ const (
 	SEMICOLON         // ;
 	COLON             // :
 	QUESTION_MARK     // ?
+	QUESTION_DOT      // ?.
+	ARROW             // =>
+	ELLIPSIS          // ...
+	BACKTICK          // `
 
-	firstKeyword
+	PRIVATE_IDENTIFIER
+
+	// tokens below (and only them) are syntactically valid identifiers
+
+	IDENTIFIER
+	KEYWORD
+	BOOLEAN
+	NULL
+
 	IF
 	IN
+	OF
 	DO
 
 	VAR
@@ -90,10 +100,13 @@ const (
 	VOID
 	WITH
 
+	CONST
 	WHILE
 	BREAK
 	CATCH
 	THROW
+	CLASS
+	SUPER
 
 	RETURN
 	TYPEOF
@@ -102,13 +115,22 @@ const (
 
 	DEFAULT
 	FINALLY
+	EXTENDS
 
 	FUNCTION
 	CONTINUE
 	DEBUGGER
 
 	INSTANCEOF
-	lastKeyword
+
+	ESCAPED_RESERVED_WORD
+	// Non-reserved keywords below
+
+	LET
+	STATIC
+	ASYNC
+	AWAIT
+	YIELD
 )
 
 var token2string = [...]string{
@@ -121,8 +143,10 @@ var token2string = [...]string{
 	NULL:                        "NULL",
 	NUMBER:                      "NUMBER",
 	IDENTIFIER:                  "IDENTIFIER",
+	PRIVATE_IDENTIFIER:          "PRIVATE_IDENTIFIER",
 	PLUS:                        "+",
 	MINUS:                       "-",
+	EXPONENT:                    "**",
 	MULTIPLY:                    "*",
 	SLASH:                       "/",
 	REMAINDER:                   "%",
@@ -132,10 +156,10 @@ var token2string = [...]string{
 	SHIFT_LEFT:                  "<<",
 	SHIFT_RIGHT:                 ">>",
 	UNSIGNED_SHIFT_RIGHT:        ">>>",
-	AND_NOT:                     "&^",
 	ADD_ASSIGN:                  "+=",
 	SUBTRACT_ASSIGN:             "-=",
 	MULTIPLY_ASSIGN:             "*=",
+	EXPONENT_ASSIGN:             "**=",
 	QUOTIENT_ASSIGN:             "/=",
 	REMAINDER_ASSIGN:            "%=",
 	AND_ASSIGN:                  "&=",
@@ -144,9 +168,9 @@ var token2string = [...]string{
 	SHIFT_LEFT_ASSIGN:           "<<=",
 	SHIFT_RIGHT_ASSIGN:          ">>=",
 	UNSIGNED_SHIFT_RIGHT_ASSIGN: ">>>=",
-	AND_NOT_ASSIGN:              "&^=",
 	LOGICAL_AND:                 "&&",
 	LOGICAL_OR:                  "||",
+	COALESCE:                    "??",
 	INCREMENT:                   "++",
 	DECREMENT:                   "--",
 	EQUAL:                       "==",
@@ -171,10 +195,16 @@ var token2string = [...]string{
 	SEMICOLON:                   ";",
 	COLON:                       ":",
 	QUESTION_MARK:               "?",
+	QUESTION_DOT:                "?.",
+	ARROW:                       "=>",
+	ELLIPSIS:                    "...",
+	BACKTICK:                    "`",
 	IF:                          "if",
 	IN:                          "in",
+	OF:                          "of",
 	DO:                          "do",
 	VAR:                         "var",
+	LET:                         "let",
 	FOR:                         "for",
 	NEW:                         "new",
 	TRY:                         "try",
@@ -183,16 +213,24 @@ var token2string = [...]string{
 	CASE:                        "case",
 	VOID:                        "void",
 	WITH:                        "with",
+	ASYNC:                       "async",
+	AWAIT:                       "await",
+	YIELD:                       "yield",
+	CONST:                       "const",
 	WHILE:                       "while",
 	BREAK:                       "break",
 	CATCH:                       "catch",
 	THROW:                       "throw",
+	CLASS:                       "class",
+	SUPER:                       "super",
 	RETURN:                      "return",
 	TYPEOF:                      "typeof",
 	DELETE:                      "delete",
 	SWITCH:                      "switch",
+	STATIC:                      "static",
 	DEFAULT:                     "default",
 	FINALLY:                     "finally",
+	EXTENDS:                     "extends",
 	FUNCTION:                    "function",
 	CONTINUE:                    "continue",
 	DEBUGGER:                    "debugger",
@@ -200,150 +238,163 @@ var token2string = [...]string{
 }
 
 var keywordTable = map[string]_keyword{
-	"if": _keyword{
+	"if": {
 		token: IF,
 	},
-	"in": _keyword{
+	"in": {
 		token: IN,
 	},
-	"do": _keyword{
+	"do": {
 		token: DO,
 	},
-	"var": _keyword{
+	"var": {
 		token: VAR,
 	},
-	"for": _keyword{
+	"for": {
 		token: FOR,
 	},
-	"new": _keyword{
+	"new": {
 		token: NEW,
 	},
-	"try": _keyword{
+	"try": {
 		token: TRY,
 	},
-	"this": _keyword{
+	"this": {
 		token: THIS,
 	},
-	"else": _keyword{
+	"else": {
 		token: ELSE,
 	},
-	"case": _keyword{
+	"case": {
 		token: CASE,
 	},
-	"void": _keyword{
+	"void": {
 		token: VOID,
 	},
-	"with": _keyword{
+	"with": {
 		token: WITH,
 	},
-	"while": _keyword{
+	"async": {
+		token: ASYNC,
+	},
+	"while": {
 		token: WHILE,
 	},
-	"break": _keyword{
+	"break": {
 		token: BREAK,
 	},
-	"catch": _keyword{
+	"catch": {
 		token: CATCH,
 	},
-	"throw": _keyword{
+	"throw": {
 		token: THROW,
 	},
-	"return": _keyword{
+	"return": {
 		token: RETURN,
 	},
-	"typeof": _keyword{
+	"typeof": {
 		token: TYPEOF,
 	},
-	"delete": _keyword{
+	"delete": {
 		token: DELETE,
 	},
-	"switch": _keyword{
+	"switch": {
 		token: SWITCH,
 	},
-	"default": _keyword{
+	"default": {
 		token: DEFAULT,
 	},
-	"finally": _keyword{
+	"finally": {
 		token: FINALLY,
 	},
-	"function": _keyword{
+	"function": {
 		token: FUNCTION,
 	},
-	"continue": _keyword{
+	"continue": {
 		token: CONTINUE,
 	},
-	"debugger": _keyword{
+	"debugger": {
 		token: DEBUGGER,
 	},
-	"instanceof": _keyword{
+	"instanceof": {
 		token: INSTANCEOF,
 	},
-	"const": _keyword{
+	"const": {
+		token: CONST,
+	},
+	"class": {
+		token: CLASS,
+	},
+	"enum": {
 		token:         KEYWORD,
 		futureKeyword: true,
 	},
-	"class": _keyword{
+	"export": {
 		token:         KEYWORD,
 		futureKeyword: true,
 	},
-	"enum": _keyword{
+	"extends": {
+		token: EXTENDS,
+	},
+	"import": {
 		token:         KEYWORD,
 		futureKeyword: true,
 	},
-	"export": _keyword{
-		token:         KEYWORD,
-		futureKeyword: true,
+	"super": {
+		token: SUPER,
 	},
-	"extends": _keyword{
-		token:         KEYWORD,
-		futureKeyword: true,
+	/*
+		"implements": {
+			token:         KEYWORD,
+			futureKeyword: true,
+			strict:        true,
+		},
+		"interface": {
+			token:         KEYWORD,
+			futureKeyword: true,
+			strict:        true,
+		},*/
+	"let": {
+		token:  LET,
+		strict: true,
 	},
-	"import": _keyword{
-		token:         KEYWORD,
-		futureKeyword: true,
-	},
-	"super": _keyword{
-		token:         KEYWORD,
-		futureKeyword: true,
-	},
-	"implements": _keyword{
+	/*"package": {
 		token:         KEYWORD,
 		futureKeyword: true,
 		strict:        true,
 	},
-	"interface": _keyword{
+	"private": {
 		token:         KEYWORD,
 		futureKeyword: true,
 		strict:        true,
 	},
-	"let": _keyword{
+	"protected": {
 		token:         KEYWORD,
 		futureKeyword: true,
 		strict:        true,
 	},
-	"package": _keyword{
+	"public": {
 		token:         KEYWORD,
 		futureKeyword: true,
 		strict:        true,
+	},*/
+	"static": {
+		token:  STATIC,
+		strict: true,
 	},
-	"private": _keyword{
-		token:         KEYWORD,
-		futureKeyword: true,
-		strict:        true,
+	"await": {
+		token: AWAIT,
 	},
-	"protected": _keyword{
-		token:         KEYWORD,
-		futureKeyword: true,
-		strict:        true,
+	"yield": {
+		token: YIELD,
 	},
-	"public": _keyword{
-		token:         KEYWORD,
-		futureKeyword: true,
-		strict:        true,
+	"false": {
+		token: BOOLEAN,
 	},
-	"static": _keyword{
-		token:         KEYWORD,
-		futureKeyword: true,
-		strict:        true,
+	"true": {
+		token: BOOLEAN,
+	},
+	"null": {
+		token: NULL,
 	},
 }
